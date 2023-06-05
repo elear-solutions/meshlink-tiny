@@ -93,30 +93,33 @@ bool sync_path(const char *pathname) {
 	FILE* file;
 
 	dir = opendir(pathname);
-	if (NULL == dir )
+	if (NULL == dir)
 	{
 		logger(NULL, MESHLINK_ERROR, "Failed to open %s: %s\n", pathname, strerror(errno));
 		meshlink_errno = MESHLINK_ESTORAGE;
 		return false;
 	}
 	else
-    {
-        while ((entry = readdir(dir)) != NULL) {
-            snprintf(filepath, sizeof(filepath), "%s/%s", pathname, entry->d_name);
-            file = fopen(filepath, "r");
-            if (file) {
-                if ( fclose(file) )
+	{
+		while ((entry = readdir(dir)) != NULL)
+		{
+			snprintf(filepath, sizeof(filepath), "%s/%s", pathname, entry->d_name);
+			file = fopen(filepath, "r");
+			if (file)
+			{
+				fsync(fileno(file));
+				if (fclose(file))
 				{
 					closedir(dir);
 					logger(NULL, MESHLINK_ERROR, "Failed to close %s: %s\n", filepath, strerror(errno));
 					meshlink_errno = MESHLINK_ESTORAGE;
 					return false;
 				}
-            }
-        }
-    }
+			}
+		}
+	}
 
-    if(closedir(dir)) {
+	if(closedir(dir)) {
 		logger(NULL, MESHLINK_ERROR, "Failed to close %s: %s\n", pathname, strerror(errno));
 		meshlink_errno = MESHLINK_ESTORAGE;
 		return false;
