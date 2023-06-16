@@ -1158,7 +1158,7 @@ bool meshlink_start(meshlink_handle_t *mesh) {
 
 	event_loop_start(&mesh->loop);
 
-	// Ensure we have a small but sufficient amount of stack space.
+	// Ensure we have a decent amount of stack space. Musl's default of 80 kB is too small.
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
 	pthread_attr_setstacksize(&attr, 16 * 1024);
@@ -1324,12 +1324,14 @@ bool meshlink_destroy_ex(const meshlink_open_params_t *params) {
 	// TODO: use _locking()?
 #else
 
+#ifdef HAVE_FLOCK
 	if(flock(fileno(lockfile), LOCK_EX | LOCK_NB) != 0) {
 		logger(NULL, MESHLINK_ERROR, "Configuration directory %s still in use\n", params->lock_filename);
 		fclose(lockfile);
 		meshlink_errno = MESHLINK_EBUSY;
 		return false;
 	}
+#endif
 
 #endif
 
