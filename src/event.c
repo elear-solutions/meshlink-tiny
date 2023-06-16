@@ -249,8 +249,6 @@ static void pipe_exit(event_loop_t *loop) {
 }
 
 void signal_trigger(event_loop_t *loop, signal_t *sig) {
-	meshlink_handle_t *mesh = loop->data;
-
 #ifdef HAVE_STDATOMIC_H
 
 	if(atomic_flag_test_and_set(&sig->set)) {
