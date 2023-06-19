@@ -87,22 +87,40 @@ bool sync_path(const char *pathname) {
 
 	int fd = open(pathname, O_RDONLY);
 
-	if(fd < 0) {
+	char filepath[PATH_MAX];
+    DIR* dir;
+	struct dirent* entry;
+	FILE* file;
+
+	dir = opendir(pathname);
+	if (NULL == dir)
+	{
 		logger(NULL, MESHLINK_ERROR, "Failed to open %s: %s\n", pathname, strerror(errno));
 		meshlink_errno = MESHLINK_ESTORAGE;
 		return false;
 	}
-
-	if(fsync(fd)) {
-		logger(NULL, MESHLINK_ERROR, "Failed to sync %s: %s\n", pathname, strerror(errno));
-		close(fd);
-		meshlink_errno = MESHLINK_ESTORAGE;
-		return false;
+	else
+	{
+		while ((entry = readdir(dir)) != NULL)
+		{
+			snprintf(filepath, sizeof(filepath), "%s/%s", pathname, entry->d_name);
+			file = fopen(filepath, "r");
+			if (file)
+			{
+				fsync(fileno(file));
+				if (fclose(file))
+				{
+					closedir(dir);
+					logger(NULL, MESHLINK_ERROR, "Failed to close %s: %s\n", filepath, strerror(errno));
+					meshlink_errno = MESHLINK_ESTORAGE;
+					return false;
+				}
+			}
+		}
 	}
 
-	if(close(fd)) {
+	if(closedir(dir)) {
 		logger(NULL, MESHLINK_ERROR, "Failed to close %s: %s\n", pathname, strerror(errno));
-		close(fd);
 		meshlink_errno = MESHLINK_ESTORAGE;
 		return false;
 	}
@@ -728,6 +746,18 @@ bool config_write(meshlink_handle_t *mesh, const char *conf_subdir, const char *
 		logger(mesh, MESHLINK_ERROR, "Failed to close `%s': %s", tmp_path, strerror(errno));
 		meshlink_errno = MESHLINK_ESTORAGE;
 		return false;
+	}
+
+	if (-1 != access(path, F_OK))
+	{
+		printf("File:%s found, deleting it to create new one.", path);
+
+		if (-1 == unlink(path))
+		{
+			logger(mesh, MESHLINK_ERROR, "Unable to unlink file:%s", path, strerror(errno));
+			meshlink_errno = MESHLINK_ESTORAGE;
+			return false;
+		}
 	}
 
 	if(rename(tmp_path, path)) {
