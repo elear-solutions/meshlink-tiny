@@ -7,8 +7,8 @@ class MeshlinkTinylibConan(ConanFile):
     version = "0.0.1"
     license = "<Put the package license here>"
     author = "<Put your name here> <And your email here>"
-    url = "https://github.com/elear-solutions/meshlink"
-    description = "This recipe file used to build and package binaries of meshlink repository"
+    url = "https://github.com/elear-solutions/meshlink-tiny"
+    description = "This recipe file used to build and package binaries of meshlink-tiny repository"
     topics = ("peer-to-peer", "networking", "p2p")
     settings = "os", "compiler", "build_type", "arch"
     options = {
@@ -47,4 +47,4 @@ class MeshlinkTinylibConan(ConanFile):
         self.copy("*", dst="lib", src="src/lib", keep_path=False)
 
     def package_info(self):
-        self.cpp_info.libs = [ "meshlink" ]
+        self.cpp_info.libs = [ "meshlink-tiny" ]
